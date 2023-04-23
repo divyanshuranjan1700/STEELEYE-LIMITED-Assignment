@@ -1,0 +1,76 @@
+
+Q1.Explain what the simple List component does.
+Ans. From the partially correct code as I can see, it looks like it shows an item of the list (mapped from the parent). Uses isSelected bool to check whether the selected item is the one that has the same index with the one that is selected: if true, make it green; otherwise, make it red. Also, note it uses memo, that means if the prop passed to the simple list component doesn't change, it won't re-render. That means a boost in performance by reducing unnecessary re-renders.
+
+Q2. What problems/warnings are there with code?
+Ans. In the SingleListItem component, the onClickHandler prop is being passed the result of invoking onClickHandler(index). This means that onClickHandler is being called immediately instead of being used as a callback function to be called later when the
+
+element is clicked. To fix this, you can change the line to onClick={() => onClickHandler(index)}.
+In the WrappedListComponent component, the setSelectedIndex state setter function is being assigned to the selectedIndex variable, instead of the current state value. This means that the isSelected prop passed to SingleListItem will always be a function, even when it should be a boolean value. To fix this, change const [setSelectedIndex, selectedIndex] = useState(); to const [selectedIndex, setSelectedIndex] = useState(null);.
+
+In the WrappedListComponent component, the items prop is defined as an array of objects with a text property. However, the items default prop is set to null, which does not match the prop type definition. To fix this, change items: null to items: [].
+
+The propTypes definition for items in the WrappedListComponent component is incorrect. Instead of PropTypes.array(PropTypes.shapeOf({ text: PropTypes.string.isRequired })), it should be PropTypes.arrayOf(PropTypes.shape({ text: PropTypes.string.isRequired })).
+
+Depending on the context in which this code is used, there may be other potential problems or warnings, such as unused imports or missing dependencies.
+
+Q3. Please fix, optimize, and/or modify the component as much as you think is necessary.
+Ans. import React, { useState, useEffect, useCallback, memo } from 'react';
+import PropTypes from 'prop-types';
+
+// Single List Item
+const SingleListItem = memo(({ index, isSelected, onClick, text }) => {
+return (
+<li
+style={{ backgroundColor: isSelected ? 'green' : 'red'}}
+onClick={onClick}
+>
+{text}
+
+);
+});
+SingleListItem.propTypes = {
+index: PropTypes.number.isRequired,
+isSelected: PropTypes.bool.isRequired,
+onClick: PropTypes.func.isRequired,
+text: PropTypes.string.isRequired,
+};
+
+// List Component
+const List = memo(({ items }) => {
+const [selectedIndex, setSelectedIndex] = useState(null);
+
+const handleClick = useCallback((index) => {
+setSelectedIndex(index);
+}, []);
+
+useEffect(() => {
+setSelectedIndex(null);
+}, [items]);
+
+return (
+<ul style={{ textAlign: 'left' }}>
+{items.map(({ text }, index) => (
+<SingleListItem
+key={index}
+onClick={() => handleClick(index)}
+text={text}
+index={index}
+isSelected={selectedIndex === index}
+/>
+))}
+
+);
+});
+
+List.propTypes = {
+items: PropTypes.arrayOf(
+PropTypes.shape({
+text: PropTypes.string.isRequired,
+})
+).isRequired,
+};
+
+export default List;
+
+
